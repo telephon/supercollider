@@ -126,7 +126,7 @@ ServerOptions {
 			o = o ++ " -H % %".format(inDevice.asString.quote, outDevice.asString.quote)
 		};
 		if(verbosity != 0) {
-			o = o ++ " -v " ++ verbosity
+			o = o ++ " -V " ++ verbosity
 		};
 		if(zeroConf.not) {
 			o = o ++ " -R 0"
@@ -384,7 +384,7 @@ Server {
 		var n = options.maxLogins ? 1;
 
 		numControl = options.numControlBusChannels div: n;
-		numAudio = options.numAudioBusChannels div: n;
+		numAudio = options.numPrivateAudioBusChannels div: n;
 
 		controlBusOffset = numControl * offset + options.reservedNumControlBusChannels;
 		audioBusOffset = options.firstPrivateBus + (numAudio * offset) + options.reservedNumAudioBusChannels;
@@ -510,7 +510,7 @@ Server {
 	listSendBundle { |time, msgs|
 		addr.sendBundle(time, *(msgs.asArray))
 	}
-    
+
 	reorder { |nodeList, target, addAction=\addToHead|
 		target = target.asTarget;
 		this.sendMsg(62, Node.actionNumberFor(addAction), target.nodeID, *(nodeList.collect(_.nodeID))) //"/n_order"
