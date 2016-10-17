@@ -152,6 +152,23 @@ PatternProxy : Pattern {
 		^if(envir[\independent] === true) { (parent:envir) } { envir }
 	}
 
+	// function composition
+
+	composeUnaryOp { arg operator;
+		^NaryOpPatternProxy.new(operator, this)
+	}
+
+	composeBinaryOp { arg operator, pattern, adverb; // todo x-adverb
+		^NaryOpPatternProxy.new(operator, this, [pattern, adverb])
+	}
+	reverseComposeBinaryOp { arg operator, pattern, adverb;
+		^NaryOpPatternProxy.new(operator, pattern, [this, adverb])
+	}
+	composeNAryOp { arg selector, argList;
+		^NaryOpPatternProxy.new(selector, this, argList)
+	}
+
+	// state
 
 	storeArgs { ^[pattern] }
 
@@ -793,6 +810,22 @@ Pbindef : Pdef {
 
 	*hasGlobalDictionary { ^true }
 
+}
+
+NaryOpPatternProxy : Pattern {
+	var <operator, <proxy, <arglist;
+
+	*new { |operator, proxy, arglist|
+		^super.newCopyArgs(operator, proxy, arglist)
+	}
+
+	embedInStream { |inval|
+		^proxy.embedInStream(inval, true).collect { |each| each.performList(operator, arglist) }
+	}
+
+	asStream {
+		^proxy.asStream.collect { |each| each.performList(operator, arglist) }
+	}
 }
 
 
