@@ -51,9 +51,13 @@ Maybe : Ref {
 	do { arg function;
 		this.source.do(function) // problem: on the fly change is not picked up in this case.
 	}
-
-	dup { arg ... args;
-		^this.composeNAryOp(\dup, args)
+		
+	dup { arg argument;
+		^
+		if(argument.isCollection){
+			argument.inject(this,this.dup(_))
+		}
+		{this.composeNAryOp(\dup,[argument])}
 	}
 
 	doesNotUnderstand { arg selector ... args;
