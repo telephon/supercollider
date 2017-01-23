@@ -123,6 +123,9 @@ LagControl : Control {
 		});
 		^outputs
 	}
+	*ar { arg values, lags;
+		^AudioControl.ar(values).lag(lags)
+	}
 	*ir {
 		^this.shouldNotImplement(thisMethod)
 	}
@@ -213,6 +216,10 @@ AbstractOut : UGen {
 						"(" + inputs.at(i) + ") is not audio rate");
 				});
 			});
+		}, {
+			if(inputs.size <= 1, {
+				^"missing input at index 1"
+			})
 		});
 		^this.checkValidInputs
 	}
@@ -284,26 +291,4 @@ XOut : AbstractOut {
 		^this.checkValidInputs
 	}
 	writesToBus { ^true }
-}
-
-
-SharedOut : AbstractOut {
-	*kr { arg bus, channelsArray;
-		warn("SharedOut is deprecated and will be removed. Please use Bus-getSynchronous instead.");
-		this.multiNewList(['control', bus] ++ channelsArray.asArray)
-		^0.0		// Out has no output
-	}
-	*numFixedArgs { ^1 }
-	writesToBus { ^false }
-}
-
-SharedIn : AbstractIn {
-	*kr { arg bus = 0, numChannels = 1;
-		warn("SharedIn is deprecated and will be removed. Please use Bus-setSynchronous instead.");
-		^this.multiNew('control', numChannels, bus)
-	}
-	init { arg numChannels ... argBus;
-		inputs = argBus.asArray;
-		^this.initOutputs(numChannels, rate)
-	}
 }

@@ -3,7 +3,7 @@ summary:: How to find more help
 categories:: Help
 related:: Search, Browse, Help
 
-note:: This help file uses the key commands for OS X; on other systems, please substitute the Shortcuts as necessary ::
+note:: This help file uses the key commands for macOS; on other systems, please substitute the Shortcuts as necessary ::
 
 Listed below are a few techniques for tracking down documentation and functionality. Note: If some of the terms used below (e.g. class, method, inheritance, etc.) are unclear to you, you may wish to read the link::Guides/Glossary:: and link::Browse#Language:: helpfiles for detail on some of these concepts. Reading a general tutorial on Object Oriented Programming at some point could also be useful, as could reading a FAQ, etc. about Smalltalk. Smalltalk is the general purpose OOP language upon which the the design of the SuperCollider language is based. Its syntax is different than SC's, but conceptually it has much in common.
 
@@ -48,7 +48,7 @@ Array.dumpInterface; // Look at the post window (the one that opened when you st
 ::
 Note that since the SuperCollider language is object-oriented many classes inherit methods from farther up the class hierarchy. (The many subclasses of Collection are a good example of this. See the Collections overview for more detail.) It would be impractical and redundant to document every inherited method that a class responds to, so it is important to be able to track down documentation and method definitions.
 
-The method dumpFullInterface applied to any Class will list all class and instance methods that a class responds to, sorted by the class in which they are implemented. This will include inherited methods. Methods overidden in a subclass are listed under the subclass.
+The method dumpFullInterface applied to any Class will list all class and instance methods that a class responds to, sorted by the class in which they are implemented. This will include inherited methods. Methods overridden in a subclass are listed under the subclass.
 code::
 Array.dumpFullInterface;
 ::

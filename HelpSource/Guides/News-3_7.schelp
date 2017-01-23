@@ -33,7 +33,7 @@ LIST::
 
 SUBSECTION::External Interfacing
 
-There is an entirely new HID (Human Interface Device) implementation: see link::Guides/Working_with_HID:: that works cross platform (Linux and OSX thus far). This deprecates the GeneralHID interface. Also the link::Classes/LID:: interface has been updated to match the API of the new HID implementation.
+There is an entirely new HID (Human Interface Device) implementation: see link::Guides/Working_with_HID:: that works cross platform (Linux and macOS thus far). This deprecates the GeneralHID interface. Also the link::Classes/LID:: interface has been updated to match the API of the new HID implementation.
 
 
 
@@ -74,12 +74,12 @@ LIST::
 SUBSECTION::Improved or corrected behavior
 LIST::
 ##LINK::Classes/LinXFade2:: (correct fading direction)
-##LINK::Classes/LFPulse:: (when width = 0.5, return exacly as many 0 as 1)
+##LINK::Classes/LFPulse:: (when width = 0.5, return exactly as many 0 as 1)
 ##LINK::Classes/TrigControl:: is now independent of synth order, like LINK::Classes/Control::.
 ##LINK::Classes/TRand::, LINK::Classes/TExpRand::, LINK::Classes/TIRand:: (can operate at audio rate)
 ##LINK::Classes/Env#*new:: accepts a new TELETYPE::step2:: shape, which steps to a value at the end of a shape
 ##LINK::Classes/UGen#-curvelin:: is now inverse of LINK::Classes/UGen#-lincurve::
-##LINK::Classes/Server#-record:: correcty closes short files
+##LINK::Classes/Server#-record:: correctly closes short files
 ##In combinations of demand-ugens: Instances of PV_Copy are added automatically where necessary for parallel processing
 ::
 

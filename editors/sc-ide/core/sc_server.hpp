@@ -35,6 +35,7 @@ class ScProcess;
 class VolumeWidget;
 namespace Settings { class Manager; }
 
+
 class ScServer : public QObject
 {
     Q_OBJECT
@@ -59,6 +60,7 @@ public:
         VolumeDown,
         VolumeRestore,
         Record,
+        PauseRecord,
 
         ActionCount
     };
@@ -69,8 +71,11 @@ public:
 
     QAction *action(ActionRole role) { return mActions[role]; }
 
+    Q_PROPERTY( float volume READ volume WRITE setVolume NOTIFY volumeChanged )
+
     float volume() const;
     void setVolume( float volume );
+    void setVolumeRange( float min, float max );
 
     bool isMuted() const;
     void setMuted( bool muted );
@@ -79,7 +84,9 @@ public:
     void setDumpingOSC( bool dumping );
 
     bool isRecording() const;
-    boost::chrono::seconds recordingTime() const;
+    bool isPaused() const;
+
+    int recordingTime() const;
 
 public slots:
     void boot();
@@ -100,16 +107,21 @@ public slots:
     void restoreVolume();
     void mute() { setMuted(true); }
     void unmute() { setMuted(false); }
+    void sendRecording( bool active );
     void setRecording( bool active );
+    void pauseRecording( bool flag );
 
 signals:
-    void runningStateChange( bool running, QString const & hostName, int port );
-    void updateServerStatus (int ugenCount, int synthCount,
+	void runningStateChanged( bool running, QString const & hostName, int port, bool unresponsive );
+	void updateServerStatus (int ugenCount, int synthCount,
                              int groupCount, int defCount,
                              float avgCPU, float peakCPU);
     void volumeChanged( float volume );
+    void volumeRangeChanged( float min, float max);
     void mutedChanged( bool muted );
     void recordingChanged( bool recording );
+    void pauseChanged( bool paused );
+
 
 private slots:
     void onScLangStateChanged( QProcess::ProcessState );
@@ -162,10 +174,11 @@ private:
 
     QAction * mActions[ActionCount];
 
+    float mVolume = 0, mVolumeMin = -90, mVolumeMax = 6;
     VolumeWidget *mVolumeWidget;
-    QTimer mRecordTimer;
-    boost::chrono::system_clock::time_point mRecordTime;
+    int mRecordingSeconds;
     bool mIsRecording;
+    bool mIsRecordingPaused;
 };
 
 }

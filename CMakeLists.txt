@@ -5,6 +5,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 endif()
 
 cmake_minimum_required (VERSION 2.8.12)
+set(SUPERNOVA_CMAKE_MINVERSION 3.1)
 
 include("SCVersion.txt")
 set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}")
@@ -28,19 +29,6 @@ if (${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
 	message(WARNING "WARNING: IN-PLACE BUILDS ARE NOT RECOMMENDED - PLEASE USE A BUILD DIRECTORY")
 endif()
 
-# allows cmake-find modules and Windows installer to identify the right architecture
-if(WIN32)
-    if(CMAKE_CL_64 OR "$ENV{MSYSTEM}" MATCHES "64" OR CMAKE_C_COMPILER MATCHES "64")
-        SET(CMAKE_LIBRARY_ARCHITECTURE "x64" CACHE STRING "Architecture of target system (for 64bit)")
-    else()
-        SET(CMAKE_LIBRARY_ARCHITECTURE "x86" CACHE STRING "Architecture of target system (for 32bit)")
-    endif()
-
-    if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-        SET(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/Install" CACHE STRING "Cmake install path" FORCE)
-    endif()
-endif(WIN32)
-
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules
                       ${CMAKE_MODULE_PATH})
 
@@ -51,6 +39,28 @@ CONFIGURE_FILE(
 
 ADD_CUSTOM_TARGET(uninstall
   "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake")
+
+# identify target architecture, build portaudio before any SC specific
+# definitions break the pa-build
+if(WIN32)
+    SET(SC_WIN_BUNDLE_NAME "SuperCollider" CACHE STRING "Folder name of SC install")
+
+    if(CMAKE_CL_64 OR "$ENV{MSYSTEM}" MATCHES "64" OR CMAKE_C_COMPILER MATCHES "64")
+        SET(CMAKE_LIBRARY_ARCHITECTURE "x64" CACHE STRING "Architecture of target system (for 64bit)")
+    else()
+        SET(CMAKE_LIBRARY_ARCHITECTURE "x86" CACHE STRING "Architecture of target system (for 32bit)")
+    endif()
+
+    # installing to default application-location creates an error (a privileges and/or path syntax problem)
+    if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+        SET(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/Install" CACHE PATH "Cmake install path" FORCE)
+    endif()
+
+    # might work with "SHARED" as well.
+    set(PA_LIBRARY_TYPE "STATIC")
+    set(PORTAUDIO_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/external_libraries/portaudio_sc_org/include" CACHE PATH "Portaudio include directory" FORCE)
+    add_subdirectory("${CMAKE_SOURCE_DIR}/external_libraries/portaudio_sc_org")
+endif(WIN32)
 
 #############################################
 # Compiler flags etc
@@ -96,7 +106,7 @@ elseif(UNIX)
 endif()
 
 if(WIN32)
-    add_definitions(-DWIN32_LEAN_AND_MEAN -DNOMINMAX -D_WIN32_WINNT=0x0500)
+    add_definitions(-DWIN32_LEAN_AND_MEAN -DNOMINMAX -D_WIN32_WINNT=0x0600)
 
     #avoid unnecesary autolink
     add_definitions(-DBOOST_DATE_TIME_NO_LIB -DBOOST_ALL_NO_LIB)
@@ -133,6 +143,16 @@ endif()
 
 set(AUDIOAPI "default" CACHE STRING "Audio API to use (one of {default,coreaudio,jack,portaudio})")
 
+if (AUDIOAPI STREQUAL jack)
+	# here we check for JACK metadata API
+	include(CheckIncludeFiles)
+	CHECK_INCLUDE_FILES("jack/metadata.h" JACK_USE_METADATA_API)
+	if(${JACK_USE_METADATA_API})
+		message(STATUS "using JACK metadata API")
+	    include_directories(${CMAKE_SOURCE_DIR}/external_libraries/jackey)
+	endif()
+endif()
+
 option(LIBSCSYNTH "Compile libscsynth as shared library" OFF)
 
 option(INSTALL_HELP "Install help docs and examples along with the software" ON)
@@ -151,7 +171,7 @@ endif (SC_QT)
 
 option(ENABLE_TESTSUITE "Compile testsuite." ON)
 
-if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+if(CMAKE_SYSTEM_NAME MATCHES "Linux" AND NOT CMAKE_VERSION VERSION_LESS SUPERNOVA_CMAKE_MINVERSION)
     option(SUPERNOVA "Build with supernova as optional audio synthesis server" ON)
 else()
     option(SUPERNOVA "Build with supernova as optional audio synthesis server" OFF)
@@ -162,7 +182,11 @@ option(SC_MEMORY_DEBUGGING "Build sclang&scsynth for memory debugging (disable m
 option(GC_SANITYCHECK "Enable sanity checks in the sclang garbage collector.")
 
 option(NO_LIBSNDFILE "Disable soundfile functionality. (Not recommended.)" OFF)
-option(NO_AVAHI "Disable Avahi support. (Not recommended.)" OFF)
+if(WIN32)
+    option(NO_AVAHI "Disable Avahi support. (Not recommended.)" ON)
+else(WIN32)
+    option(NO_AVAHI "Disable Avahi support. (Not recommended.)" OFF)
+endif(WIN32)
 option(NO_GPL3 "Disable GPL3 code, for pure-GPL2 situations. (Not recommended.)" OFF)
 
 option(SCLANG_SERVER "Build with internal server." ON)
@@ -196,7 +220,6 @@ if (NOT WIN32)
     include_directories(${PTHREADS_INCLUDE_DIR})
 endif()
 
-
 if(SYSTEM_BOOST)
   set(Boost_USE_MULTITHREADED      ON)
   find_package( Boost 1.50.0 COMPONENTS  thread system filesystem program_options regex test_exec_monitor )
@@ -219,7 +242,7 @@ endif()
 if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANG)
 	if (SSE)
 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}   -msse")
-		set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -msse")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse")
 		if(NOT APPLE AND NOT CMAKE_COMPILER_IS_CLANG)
 			set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mfpmath=sse")
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfpmath=sse")
@@ -234,12 +257,22 @@ if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANG)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 	endif()
 
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-	set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -std=c++11")
-	if(CMAKE_COMPILER_IS_CLANG)
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
-		set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -stdlib=libc++")
-	endif()
+    if( CMAKE_VERSION VERSION_LESS 3.1 )
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+        set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -std=c++11")
+        if(CMAKE_COMPILER_IS_CLANG)
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+            set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -stdlib=libc++")
+        endif()
+    else()
+        set( CMAKE_CXX_STANDARD 11 )
+
+        if(CMAKE_COMPILER_IS_CLANG)
+            # workaround
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+            set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -stdlib=libc++")
+        endif()
+     endif()
 
 	if(FORTIFY)
 		add_definitions( -D_FORTIFY_SOURCE=2 )
@@ -259,7 +292,7 @@ if (CMAKE_COMPILER_IS_INTEL AND NOT WIN32)
 	add_definitions(-diag-disable 279) # controlling expression is constant
 endif()
 
-if(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
+if(MSVC)
   foreach(flag CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
     set(${flag} "${${flag}} /wd4018") # signed/unsigned mismatch
     set(${flag} "${${flag}} /wd4102") # unreferenced label
@@ -272,7 +305,7 @@ if(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
   endforeach()
 
   add_definitions(-D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS)
-endif()
+endif(MSVC)
 
 if (SC_MEMORY_DEBUGGING)
 	add_definitions(-DDISABLE_MEMORY_POOLS)
@@ -280,8 +313,24 @@ if (SC_MEMORY_DEBUGGING)
 endif()
 
 if(MINGW)
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mstackrealign")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mstackrealign")
+# no-strict-aliasing was introduced because of problems with MinGW/GCC 4.9.2
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mstackrealign -fno-strict-aliasing")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mstackrealign -fno-strict-aliasing")
+endif()
+
+# support for building on Raspberry Pi 1/2/3 and BBB
+if(CMAKE_COMPILER_IS_GNUCXX AND CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7l")
+  foreach(flag CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
+    set(${flag} "${${flag}} -mfloat-abi=hard")
+    set(${flag} "${${flag}} -mfpu=neon")
+  endforeach()
+elseif(CMAKE_COMPILER_IS_GNUCXX AND CMAKE_SYSTEM_PROCESSOR STREQUAL "armv6l")
+  foreach(flag CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
+    set(${flag} "${${flag}} -march=armv6")
+    set(${flag} "${${flag}} -mtune=arm1176jzf-s")
+    set(${flag} "${${flag}} -mfloat-abi=hard")
+    set(${flag} "${${flag}} -mfpu=vfp")
+  endforeach()
 endif()
 
 if (NO_GPL3)
@@ -330,11 +379,11 @@ if(UNIX AND NOT APPLE)
 endif()
 
 if (WIN32)
-	set(auxresourcesdir "SuperCollider")
+  set(auxresourcesdir "${SC_WIN_BUNDLE_NAME}" CACHE STRING "Resources directory")
 elseif(APPLE)
-	set(auxresourcesdir ${scappbundlename})
+	set(auxresourcesdir ${scappbundlename} CACHE STRING "Resources directory")
 else()
-	set(auxresourcesdir "share/SuperCollider")
+	set(auxresourcesdir "share/SuperCollider" CACHE STRING "Resources directory")
 endif()
 
 set(SCCLASSLIB_EXCLUDE_REGEX "IGNOREME")
@@ -431,15 +480,6 @@ if(INSTALL_HELP)
 			PATTERN "*#" EXCLUDE
 		)
 	endif()
-
-	if(NOT APPLE)
-		install(DIRECTORY HelpSource
-			DESTINATION ${auxresourcesdir}
-			REGEX ${SCCLASSLIB_EXCLUDE_REGEX} EXCLUDE
-			PATTERN "*~" EXCLUDE
-			PATTERN "*#" EXCLUDE
-		)
-	endif()
 endif()
 
 
@@ -468,11 +508,11 @@ if(SC_DOC_RENDER)
 	file(GLOB_RECURSE SCDocClasses RELATIVE SCClassLibrary/SCDoc *.sc)
 
 	add_custom_target(doc ALL
-					COMMAND ${CMAKE_CURRENT_BINARY_DIR}/lang/sclang${CMAKE_EXECUTABLE_SUFFIX}
-							-l ${CMAKE_CURRENT_BINARY_DIR}/build_sclang.cfg
-							platform/renderAllHelp.scd ${CMAKE_CURRENT_SOURCE_DIR}/HelpSource ${CMAKE_CURRENT_BINARY_DIR}/RenderedHelp
-					WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-					DEPENDS sclang ${SCDocSources} ${SCDocClasses})
+		COMMAND $<TARGET_FILE_DIR:sclang>/sclang${CMAKE_EXECUTABLE_SUFFIX}
+			-l ${CMAKE_CURRENT_BINARY_DIR}/build_sclang.cfg
+			platform/renderAllHelp.scd ${CMAKE_CURRENT_SOURCE_DIR}/HelpSource ${CMAKE_CURRENT_BINARY_DIR}/RenderedHelp
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+		DEPENDS sclang ${SCDocSources} ${SCDocClasses})
 
 endif()
 
@@ -515,8 +555,8 @@ endif()
 mark_as_advanced(AVAHI_LIBRARIES AVAHI_INCLUDE_DIRS AVAHI_INCLUDE_DIR AVAHI_LIBRARY-COMMON AVAHI_LIBRARY-CLIENT)
 mark_as_advanced(DL)
 mark_as_advanced(EMACS_EXECUTABLE)
-mark_as_advanced(FFTW3F_INCLUDE_DIR FFTW3F_LIBRARY)
+mark_as_advanced(FFTW3F_INCLUDE_DIR FFTW3F_LIBRARY FFTW3F_LIBRARY_DIR)
 mark_as_advanced(JACK JACK_INCLUDE_DIR JACK_LIBRARY)
 mark_as_advanced(MATH_LIBRARY)
 mark_as_advanced(QT_QMAKE_EXECUTABLE)
-mark_as_advanced(SNDFILE)
+mark_as_advanced(SNDFILE SNDFILE_LIBRARY_DIR)

@@ -48,7 +48,7 @@ code::
 ::
 
 method::ascii
-Returns an Array of asci numbers of the Strings's characters.
+Returns an Array of ascii numbers of the Strings's characters.
 code::
 "wertvoll".ascii
 ::
@@ -129,7 +129,7 @@ this is a test. pi = 3.1416, list = [ 1, 2, 3, 4 ]
 ::
 
 method::postcs
-As link::#-postln::, but posts the link::#-asCompileString#compileString:: of the reciever.
+As link::#-postln::, but posts the link::#-asCompileString#compileString:: of the receiver.
 code::
 List[1, 2, ["comment", [3, 2]], { 1.0.rand }].postcs;
 ::
@@ -147,10 +147,7 @@ code::
 ::
 
 method::inform
-Posts the string.
-code::
-"Do not press this button again".inform;
-::
+Legacy method (although due to widespread use, it will not be removed). This is identical to code::postln::.
 
 subsection:: Interpreting strings as code
 
@@ -272,8 +269,20 @@ code::
 
 subsection:: Regular expressions
 
+Note the inversion of the arguments:
+
+List::
+## Code::regexp.matchRegexp(stringToSearch)::
+## Code::stringToSearch.findRegexp(regexp):: (and similar for code::findAllRegexp:: and code::findRegexpAt::).
+::
+
+Code::findRegexp:: follows the pattern established by link::Classes/String#-find::, where the receiver is the string to be searched. Code::matchRegexp:: follows the pattern of link::Reference/matchItem::, where the receiver is the pattern to match and the first argument is the object to be tested. This is a common source of confusion, but it is based on this precedent.
+
 method::matchRegexp
 POSIX regular expression matching. Returns true if the receiver (a regular expression pattern) matches the string passed to it. The strong::start:: is an offset where to start searching in the string (default: 0), strong::end:: where to stop.
+
+note::This is code::regexp.matchRegexp(stringToSearch):: and not the other way around! See above: link::Classes/String#Regular expressions::.::
+
 code::
 "c".matchRegexp("abcdefg", 2, 5); // true: substring exists
 "c".matchRegexp("abcdefg", 4, 5); // false: substring doesn't exist
@@ -539,7 +548,7 @@ Despite the fact that the method is called 'unixCmd', strong::it does work in Wi
 ::
 
 method::unixCmd
-Execute a unix command strong::asynchronously:: using the standard shell (sh).
+Execute a UNIX command strong::asynchronously:: using the standard shell (sh).
 argument:: action
 A link::Classes/Function:: that is called when the process has exited. It is passed two arguments: the exit code and pid of the exited process.
 argument:: postOutput
@@ -561,16 +570,16 @@ code::
 ::
 
 method::systemCmd
-Executes a unix command strong::synchronously:: using the standard shell (sh).
+Executes a UNIX command strong::synchronously:: using the standard shell (sh).
 
-returns:: Error code of the unix command
+returns:: Error code of the UNIX command
 
 method::runInTerminal
 Execute the String in a new terminal window (strong::asynchronously::).
 argument::shell
 The shell used to execute the string.
 discussion::
-note:: On OSX, the string is incorporated into a temporary script file and executed using the shell. ::
+note:: On macOS, the string is incorporated into a temporary script file and executed using the shell. ::
 Example:
 code::
 "echo ---------Hello delightful SuperCollider user----------".runInTerminal;
@@ -644,14 +653,14 @@ method::resolveRelative
 Convert the receiver from a relative path to an absolute path, relative to the current document or text file. Requires that the current text file has been saved. Absolute paths are left untransformed.
 
 method::standardizePath
-Expand ~ to your home directory, and resolve aliases on OSX. See link::Classes/PathName:: for more complex needs. See link::Classes/File#*realpath:: if you want to resolve symlinks.
+Expand ~ to your home directory, and resolve aliases on macOS. See link::Classes/PathName:: for more complex needs. See link::Classes/File#*realpath:: if you want to resolve symlinks.
 code::
 "~/".standardizePath; //This will print your home directory
 ::
 
 
 method::openOS
-Open file, directory or URL via the operating system. On OSX this is implemented via teletype::open::, on Linux via
+Open file, directory or URL via the operating system. On macOS this is implemented via teletype::open::, on Linux via
 teletype::xdg-open:: and on Windows via teletype::start::.
 code::
 Platform.userConfigDir.openOS;
@@ -752,7 +761,7 @@ code::
 subsection::Misc methods
 
 method::speak
-Sends string to the speech synthesisier of the OS. (OS X only.) see: link::Classes/Speech::
+Deprecated. See link::Classes/Speech:: for the full reason and possible replacements. Sends string to the macOS speech synthesizer.
 code::
 "hi i'm talking with the default voice now, i guess".speak;
 ::
@@ -873,7 +882,7 @@ w.refresh;
 ::
 
 method::bounds
-Tries to return a link::Classes/Rect:: with the size needed to fit this string if drawed with given font.
+Tries to return a link::Classes/Rect:: with the size needed to fit this string if drawn with given font.
 argument:: font
 A link::Classes/Font::
 

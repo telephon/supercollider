@@ -144,6 +144,8 @@ void PartConv_Ctor( PartConv* unit )
 	unit->m_sr = unit->mWorld->mSampleRate;
 	//if(unit->m_sr!=44100) printf("TPV complains: sample rate not 44100, you have %d\n", unit->m_sr);
 
+	OUT0(0) = 0.f;
+
 	if(unit->m_nover2 % unit->m_blocksize !=0) {
 		printf("PartConv Error: block size doesn't divide partition size\n");
 		SETCALC(*ClearUnitOutputs);
@@ -317,7 +319,7 @@ void PartConv_next( PartConv *unit, int inNumSamples )
 				number= unit->m_numamort;
 			}
 
-			starti= unit->m_partitionsdone-1;
+			starti= unit->m_partitionsdone;//-1;
 			stopi= starti+number-1;
 
 			//printf("amort check count %d starti %d stopi %d number %d framesdone %d \n",unit->m_amortcount, starti, stopi, number, unit->m_partitionsdone);
@@ -326,7 +328,7 @@ void PartConv_next( PartConv *unit, int inNumSamples )
 			++unit->m_amortcount;
 
 			for (int i=starti; i<=stopi; ++i) {
-				int posnow= (accumpos+(i*fftsize))%fullsize;
+				int posnow= (accumpos+((i-1)*fftsize))%fullsize;
 				float * target= accumbuffer+posnow;
 				int irpos= (i*fftsize);
 				float * ir= irspectrum+irpos;

@@ -819,7 +819,7 @@ void DemandEnvGen_next_k(DemandEnvGen *unit, int inNumSamples)
 							double a1 = (endLevel - level) / (1.0 - exp(curve));
 							unit->m_a2 = level + a1;
 							unit->m_b1 = a1;
-							unit->m_grow = exp(curve / count);
+							unit->m_grow = exp(curve / ceil( count) );
 						}
 					} break;
 					case shape_Squared : {
@@ -1079,7 +1079,7 @@ void DemandEnvGen_next_a(DemandEnvGen *unit, int inNumSamples)
 							double a1 = (endLevel - level) / (1.0 - exp(curve));
 							unit->m_a2 = level + a1;
 							unit->m_b1 = a1;
-							unit->m_grow = exp(curve / count);
+							unit->m_grow = exp(curve / ceil( count ) );
 						}
 					} break;
 					case shape_Squared : {
@@ -1547,6 +1547,7 @@ void Dibrown_next(Dibrown *unit, int inNumSamples)
 			OUT0(0) = NAN;
 			return;
 		}
+		unit->m_repeatCount++;
 		OUT0(0) = unit->m_val;
 		int32 z = unit->m_val + unit->mParent->mRGen->irand2(unit->m_step);
 		unit->m_val = sc_fold(z, unit->m_lo, unit->m_hi);

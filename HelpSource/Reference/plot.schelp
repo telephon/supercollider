@@ -8,7 +8,7 @@ The link::Overviews/Methods#plot#plot method:: provides the ability to plot data
 
 method:: plot
 All arguments are optional.
-note::The arguments avaliable vary from object to object. The below list is only for explanation of possible arguments.::
+note::The arguments available vary from object to object. The below list is only for explanation of possible arguments.::
 
 
 argument:: name
@@ -42,7 +42,7 @@ By default labels appear at the top left of the plot giving a data readout based
 discussion::
 If code::minval:: and/or code::maxval:: are set to code::nil:: (this is default, except for link::Classes/Buffer::s), they will be automatically calculated from the dataset minimum and/or maximum. For multi-channel data, code::minval:: and code::maxval:: may be arrays, specifying the range independently for each channel (including use of code::nil::, in which case the min/max will be calculated for the specific channel rather than for the overall dataset).
 
-Hitting the strong::L-key:: on the keyboard when the window is focussed toggles the lock, and the window can be used to edit the data.
+Hitting the strong::E-key:: on the keyboard when the window is focussed toggles the lock, and the window can be used to edit the data.
 
 section:: Examples
 

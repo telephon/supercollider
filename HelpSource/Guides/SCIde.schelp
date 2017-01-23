@@ -9,13 +9,13 @@ SuperCollider IDE is a new cross-platform coding environment, developed specific
 
 It is easy to start using, handy to work with, and sprinkled with powerful features for experienced SuperCollider coders. It is also very customizable.
 
-It runs equally well and looks almost the same on Mac OSX, Linux and Windows 7. (Issues with Windows XP remain to be solved.)
+It runs equally well and looks almost the same on macOS, Linux and Windows 7. (Issues with Windows XP remain to be solved.)
 
 
 
 Section:: Overview
 
-note:: Throughout this document, strong::Ctrl:: indicates the modifier key for keyboard shortcuts that is used on Linux and Windows platforms. strong::On Mac OSX, use Cmd instead::.::
+note:: Throughout this document, strong::Ctrl:: indicates the modifier key for keyboard shortcuts that is used on Linux and Windows platforms. strong::On macOS, use Cmd instead::.::
 
 Here is an annotated screenshot describing various components of the IDE.
 Click link::Guides/sc_ide_overview.png##here:: for a natural-size version.
@@ -327,7 +327,7 @@ Section:: Various handy shortcuts
 
 definitionlist::
 ## Focus Post Window: Ctrl+P ||  Gives focus to the Post Window. Then you can use arrow keys and Page Up / Page Down to scroll through output from the interpreter. Press Tab to return to the Code Editor.
-## Clear Post Window: Ctrl+Shift+P || Cleares the Post Window contents.
+## Clear Post Window: Ctrl+Shift+P || Clears the Post Window contents.
 ## Enlarge/Shrink Font: Ctrl++ / Ctrl+- || Enlarges or shrinks font in Code Editor, Post Window, or Help Browser.
 ::
 
