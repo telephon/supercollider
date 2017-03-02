@@ -12,23 +12,35 @@ TestBus : UnitTest {
 	}
 
 	test_free {
-		var s,busses,numBusses;
+		var s;
 		s = Server.default;
-		s.newAllocators;
 
-		numBusses = s.options.numAudioBusChannels - (s.options.numOutputBusChannels + s.options.numInputBusChannels);
+		s.options.maxLogins.do { |clientID|
+			var busses, numBusses;
 
-		busses = Array.fill(numBusses, { Bus.audio(s, 1) });
+			s.clientID = clientID; // in clientID setter, s.newAllocators happens;
 
-		this.assert(busses.every(_.notNil),"should be able to allocate all busses");
-		this.assertEquals( busses.select(_.notNil).size, numBusses," should be numAudioBusChannels busses");
+			numBusses = s.options.numAudioBusChannels - (s.options.numOutputBusChannels + s.options.numInputBusChannels);
 
-		busses.do({ |b| b.free });
+			busses = Array.fill(numBusses, { Bus.audio(s, 1) });
 
-		busses = Array.fill(numBusses, { Bus.audio(s, 1) });
+			this.assert(busses.every(_.notNil),"should be able to allocate all busses");
+			this.assertEquals( busses.select(_.notNil).size, numBusses," should be numAudioBusChannels busses");
 
-		this.assert(busses.every(_.notNil),"after freeing, should be able to re-allocate all busses");
-		this.assertEquals( busses.select(_.notNil).size, numBusses," should be numAudioBusChannels busses");
+			busses.do({ |b| b.free });
+
+			busses = Array.fill(numBusses, { Bus.audio(s, 1) });
+
+			this.assert(
+				busses.every(_.notNil),
+				"after freeing, should be able to re-allocate all busses (clientID: %)".format(clientID)
+			);
+			this.assertEquals(
+				busses.select(_.notNil).size,
+				numBusses,
+				" should be numAudioBusChannels busses (clientID: %)".format(clientID)
+			);
+		};
 
 	}
 
