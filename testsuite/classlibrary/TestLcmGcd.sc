@@ -2,78 +2,91 @@
 TestLcmGcd : UnitTest {
 
 
+	lcm { |a, b|
+		^lcm(a, b)
+	}
+
+	// test implementation
+	gcd { |a, b|
+
+		if(a == 0) { ^b };
+		if(b == 0) { ^a };
+		^gcd(a, b)
+
+	}
+
 	// lattice theoretic laws
 	// https://en.wikipedia.org/wiki/Least_common_multiple#Lattice-theoretic
 
 	callTest_commutative_lcm { |a, b|
-		var x = lcm(a, b);
-		var y = lcm(b, a);
+		var x = this.lcm(a, b);
+		var y = this.lcm(b, a);
 		this.assertEquals(x, y, "lcm(%, %) = lcm(%, %) should be valid"
 			.format(a, b, b, a))
 	}
 	callTest_commutative_gcd { |a, b|
-		var x = gcd(a, b);
-		var y = gcd(b, a);
+		var x = this.gcd(a, b);
+		var y = this.gcd(b, a);
 		this.assertEquals(x, y, "gcd(%, %) = gcd(%, %) should be valid"
 			.format(a, b, b, a))
 	}
 
 	callTest_associative_lcm { |a, b, c|
-		var x = lcm(a, lcm(b, c));
-		var y = lcm(lcm(a, b), c);
+		var x = this.lcm(a, this.lcm(b, c));
+		var y = this.lcm(this.lcm(a, b), c);
 		this.assertEquals(x, y, "lcm(%, lcm(%, %)) = lcm(lcm(%, %), %) should be valid"
 			.format(a, b, c, a, b, c))
 	}
 
 	callTest_associative_gcd { |a, b, c|
-		var x = gcd(a, gcd(b, c));
-		var y = gcd(gcd(a, b), c);
+		var x = this.gcd(a, this.gcd(b, c));
+		var y = this.gcd(this.gcd(a, b), c);
 		this.assertEquals(x, y, "gcd(%, gcd(%, %)) = gcd(gcd(%, %), %) should be valid"
 			.format(a, b, c, a, b, c))
 	}
 
 	callTest_absorption_lcm { |a, b|
-		var x = lcm(a, gcd(a, b));
+		var x = this.lcm(a, this.gcd(a, b));
 		this.assertEquals(a, x, "lcm(%, gcd(%, %)) should be valid"
 			.format(a, a, b))
 	}
 
 	callTest_absorption_gcd { |a, b|
-		var x = gcd(a, lcm(a, b));
+		var x = this.gcd(a, this.lcm(a, b));
 		this.assertEquals(a, x, "gcd(%, lcm(%, %)) should be valid"
 			.format(a, a, b))
 	}
 
 	callTest_idempotence_lcm { |a|
-		var x = lcm(a, a);
+		var x = this.lcm(a, a);
 		this.assertEquals(a, x, "% = lcm(%, %) should be valid"
 			.format(a, a, a))
 	}
 
 	callTest_idempotence_gcd { |a|
-		var x = gcd(a, a);
+		var x = this.gcd(a, a);
 		this.assertEquals(a, x, "% = gcd(%, %) should be valid"
 			.format(a, a, a))
 	}
 
 	callTest_distributive_lcm { |a, b, c|
-		var x = lcm(a, gcd(b, c));
-		var y = gcd(lcm(a, b), lcm(a, c));
+		var x = this.lcm(a, this.gcd(b, c));
+		var y = this.gcd(this.lcm(a, b), this.lcm(a, c));
 		this.assertEquals(x, y, "lcm(%, gcd(%, %)) = gcd(lcm(%, %), lcm(%, %)) should be valid"
 			.format(a, b, c, a, b, a, c))
 	}
 
 	callTest_distributive_gcd { |a, b, c|
-		var x = gcd(a, lcm(b, c));
-		var y = lcm(gcd(a, b), gcd(a, c));
+		var x = this.gcd(a, this.lcm(b, c));
+		var y = this.lcm(this.gcd(a, b), this.gcd(a, c));
 		this.assertEquals(x, y, "gcd(%, lcm(%, %)) = lcm(gcd(%, %), gcd(%, %)) should be valid"
 			.format(a, b, c, a, b, a, c))
 	}
 
 	callTest_selfDuality { |a, b, c|
 
-		var x = gcd(gcd(lcm(a, b), lcm(b, c)), lcm(a, c));
-		var y = lcm(lcm(gcd(a, b), gcd(b, c)), gcd(a, c));
+		var x = this.gcd(this.gcd(this.lcm(a, b), this.lcm(b, c)), this.lcm(a, c));
+		var y = this.lcm(this.lcm(this.gcd(a, b), this.gcd(b, c)), this.gcd(a, c));
 		this.assertEquals(x, y,
 			"gcd(gcd(lcm(%, %), lcm(%, %)), lcm(%, %)) = lcm(lcm(gcd(%, %), gcd(%, %)), gcd(%, %))"
 			"should be valid".format(
@@ -92,7 +105,7 @@ TestLcmGcd : UnitTest {
 		var a_num = binaryValue(a);
 		var b_num = binaryValue(b);
 		var x = and(a_bool, b_bool);
-		var y = lcm(a_num, b_num);
+		var y = this.lcm(a_num, b_num);
 		this.assertEquals(x, booleanValue(y), "lcm(%, %) should be equivalent to and(%, %)".format(
 			a_num, b_num, a_bool, b_bool
 		));
@@ -104,7 +117,7 @@ TestLcmGcd : UnitTest {
 		var a_num = binaryValue(a);
 		var b_num = binaryValue(b);
 		var x = or(a_bool, b_bool);
-		var y = gcd(a_num, b_num);
+		var y = this.gcd(a_num, b_num);
 		this.assertEquals(x, booleanValue(y), "gcd(%, %) should be equivalent to or(%, %)".format(
 			a_num, b_num, a_bool, b_bool
 		));
@@ -136,43 +149,23 @@ TestLcmGcd : UnitTest {
 		operands.do { |pair| this.callTest_absorption_lcm(*pair) };
 	}
 
-
-	// the following tests exclude zero, until a consistent implementation for zero is found
-
-	// gcd absorption law currently fails because gcd(-1, lcm(-1, 0)) => 1
-	// instead of -1, because gcd(-1, 0) => 1 instead of -1
-
-	test_absorptionNonNegative {
-		var operands = (0..4).dup(2).allTuples;
-		operands.do { |pair| this.callTest_absorption_lcm(*pair) };
+	test_absorption_gcd {
+		var operands = (-4..4).dup(2).allTuples;
 		operands.do { |pair| this.callTest_absorption_gcd(*pair) };
 	}
 
 	test_distributive {
-		//var operands = (-4..4).dup(3).allTuples;
-		var operands = (-4..4).removing(0).dup(3).allTuples;
-		operands.do { |triple| this.callTest_distributive_lcm(*triple) };
-		operands.do { |triple| this.callTest_distributive_gcd(*triple) };
-
-	}
-
-	test_distributiveNonNegative {
-		var operands = (0..4).dup(3).allTuples;
+		var operands = (-4..4).dup(3).allTuples;
 		operands.do { |triple| this.callTest_distributive_lcm(*triple) };
 		operands.do { |triple| this.callTest_distributive_gcd(*triple) };
 
 	}
 
 	test_selfDuality {
-		//var operands = (-4..4).dup(3).allTuples;
-		var operands = (-4..4).removing(0).dup(3).allTuples;
+		var operands = (-4..4).dup(3).allTuples;
 		operands.do { |triple| this.callTest_selfDuality(*triple) };
 	}
 
-	test_selfDualityNonNegative {
-		var operands = (0..4).removing(0).dup(3).allTuples;
-		operands.do { |triple| this.callTest_selfDuality(*triple) };
-	}
 
 	test_booleanLattice {
 		var operands = [true, false].dup(2).allTuples;
