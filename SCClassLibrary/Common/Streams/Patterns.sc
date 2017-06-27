@@ -451,7 +451,6 @@ Pbrown : Pattern {
 		stepVal = stepStr.next(inval);
 		cur = rrand(loVal, hiVal);
 
-		if(len <= 0) { nil.alwaysYield };
 		if(loVal.isNil or: { hiVal.isNil } or: { stepVal.isNil }) { ^inval };
 
 		length.value(inval).do {
