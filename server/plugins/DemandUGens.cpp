@@ -194,9 +194,9 @@ struct Dreset : public Unit
 
 struct Dconst : public Unit
 {
-  float m_total;
-  float m_runningsum;
-  float m_tolerance;
+	float m_total;
+	float m_runningsum;
+	float m_tolerance;
 };
 
 extern "C"
@@ -2260,7 +2260,7 @@ inline double sc_loop(Unit *unit, double in, double hi, int loop)
 
 #define D_CHECK_BUF \
 	if (!bufData) { \
-                unit->mDone = true; \
+		unit->mDone = true; \
 		ClearUnitOutputs(unit, 1); \
 		return; \
 	}
