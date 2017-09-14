@@ -37,6 +37,32 @@ CONFIGURE_FILE(
   "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
   IMMEDIATE @ONLY)
 
+# workaround for using ccache with Xcode generator
+# thanks to Craig Scott: https://crascit.com/2016/04/09/using-ccache-with-cmake/
+get_property(RULE_LAUNCH_COMPILE GLOBAL PROPERTY RULE_LAUNCH_COMPILE)
+if(RULE_LAUNCH_COMPILE AND CMAKE_GENERATOR STREQUAL "Xcode")
+
+    # find ccache
+    find_program(CCACHE_PROGRAM ccache)
+
+    message(STATUS "Xcode and ccache detected: using ccache to speed up build process")
+
+    # Set up wrapper scripts
+    set(SC_LAUNCH_C_SCRIPT   "${CMAKE_BINARY_DIR}/launch-c")
+    set(SC_LAUNCH_CXX_SCRIPT "${CMAKE_BINARY_DIR}/launch-cxx")
+
+    configure_file("cmake_modules/launch-c.in"   launch-c)
+    configure_file("cmake_modules/launch-cxx.in" launch-cxx)
+    execute_process(COMMAND chmod a+rx "${SC_LAUNCH_C_SCRIPT}" "${SC_LAUNCH_CXX_SCRIPT}")
+
+    # Set Xcode project attributes to route compilation and linking
+    # through our scripts
+    set(CMAKE_XCODE_ATTRIBUTE_CC         "${SC_LAUNCH_C_SCRIPT}")
+    set(CMAKE_XCODE_ATTRIBUTE_CXX        "${SC_LAUNCH_CXX_SCRIPT}")
+    set(CMAKE_XCODE_ATTRIBUTE_LD         "${SC_LAUNCH_C_SCRIPT}")
+    set(CMAKE_XCODE_ATTRIBUTE_LDPLUSPLUS "${SC_LAUNCH_CXX_SCRIPT}")
+endif()
+
 ADD_CUSTOM_TARGET(uninstall
   "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake")
 
@@ -58,8 +84,10 @@ if(WIN32)
 
     # might work with "SHARED" as well.
     set(PA_LIBRARY_TYPE "STATIC")
-    set(PORTAUDIO_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/external_libraries/portaudio_sc_org/include" CACHE PATH "Portaudio include directory" FORCE)
-    add_subdirectory("${CMAKE_SOURCE_DIR}/external_libraries/portaudio_sc_org")
+    if(NOT MSYS)
+      set(PORTAUDIO_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/external_libraries/portaudio_sc_org/include" CACHE PATH "Portaudio include directory" FORCE)
+      add_subdirectory("${CMAKE_SOURCE_DIR}/external_libraries/portaudio_sc_org")
+    endif(NOT MSYS)
 endif(WIN32)
 
 #############################################
@@ -171,7 +199,7 @@ endif (SC_QT)
 
 option(ENABLE_TESTSUITE "Compile testsuite." ON)
 
-if(CMAKE_SYSTEM_NAME MATCHES "Linux" AND NOT CMAKE_VERSION VERSION_LESS SUPERNOVA_CMAKE_MINVERSION)
+if(CMAKE_SYSTEM_NAME MATCHES "Linux|FreeBSD|DragonFly|OpenBSD|NetBSD" AND NOT CMAKE_VERSION VERSION_LESS SUPERNOVA_CMAKE_MINVERSION)
     option(SUPERNOVA "Build with supernova as optional audio synthesis server" ON)
 else()
     option(SUPERNOVA "Build with supernova as optional audio synthesis server" OFF)
@@ -207,6 +235,12 @@ option(SYSTEM_BOOST   "Use boost libraries from system" OFF)
 option(SYSTEM_YAMLCPP "Use yaml-cpp library from system" OFF)
 
 option(FORTIFY "Define -D_FORTIFY_SOURCE=2 to check for programming errors" OFF)
+
+if(MINGW AND (${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 5.3.0))
+    option(SC_HIDAPI "Build with HID support" OFF)
+else()
+    option(SC_HIDAPI "Build with HID support" ON)
+endif()
 
 #############################################
 # some default libraries
@@ -304,7 +338,9 @@ if(MSVC)
     set(${flag} "${${flag}} /wd4996") # The POSIX name for this item is deprecated.
   endforeach()
 
-  add_definitions(-D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS)
+# _ENABLE_ATOMIC_ALIGNMENT_FIX prevents the build from breaking when VS2015 update 2 upwards are used
+# see http://boost.2283326.n4.nabble.com/lockfree-ENABLE-ATOMIC-ALIGNMENT-FIX-for-VS-2015-Update-2-td4685955.html
+  add_definitions(-D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS -D_ENABLE_ATOMIC_ALIGNMENT_FIX)
 endif(MSVC)
 
 if (SC_MEMORY_DEBUGGING)
@@ -312,10 +348,13 @@ if (SC_MEMORY_DEBUGGING)
 	add_definitions(-DENABLE_MEMORY_CHECKS)
 endif()
 
-if(MINGW)
+if(MINGW AND (${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER 4.8.5) AND (${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 5.3.0))
 # no-strict-aliasing was introduced because of problems with MinGW/GCC 4.9.2
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mstackrealign -fno-strict-aliasing")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mstackrealign -fno-strict-aliasing")
+elseif(MINGW)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mstackrealign")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mstackrealign")
 endif()
 
 # support for building on Raspberry Pi 1/2/3 and BBB
@@ -343,7 +382,6 @@ add_subdirectory(external_libraries)
 
 if(NOT YAMLCPP_FOUND)
   set(YAMLCPP_LIBRARY yaml)
-  set(YAMLCPP_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/external_libraries/yaml-cpp-0.3.0/include)
 endif()
 
 
@@ -447,7 +485,7 @@ if (WIN32)
 elseif(APPLE)
 	set( AdditionalInstallFiles
 		README.md
-		README_OS_X.md
+		README_MACOS.md
 		CHANGELOG.md
 		COPYING
 		AUTHORS
@@ -560,3 +598,4 @@ mark_as_advanced(JACK JACK_INCLUDE_DIR JACK_LIBRARY)
 mark_as_advanced(MATH_LIBRARY)
 mark_as_advanced(QT_QMAKE_EXECUTABLE)
 mark_as_advanced(SNDFILE SNDFILE_LIBRARY_DIR)
+mark_as_advanced(SC_HIDAPI)

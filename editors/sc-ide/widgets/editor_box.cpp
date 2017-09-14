@@ -82,8 +82,11 @@ void CodeEditorBox::applySettings( Settings::Manager *settings )
 void CodeEditorBox::comboBoxWhenSplitting() 
 {
     if ( mSplitter->count()>1 ) {
-        bool comboBoxIsInUse = Main::settings()->value("IDE/editor/useComboBoxWhenSplitting").toBool();
-        showComboBox(comboBoxIsInUse);
+        bool comboBoxInUse = Main::settings()->value("IDE/editor/useComboBox").toBool();
+        if (!comboBoxInUse) {
+            bool comboBoxIsInUse = Main::settings()->value("IDE/editor/useComboBoxWhenSplitting").toBool();
+            showComboBox(comboBoxIsInUse);
+        }
     }
 }
 
@@ -144,7 +147,7 @@ void CodeEditorBox::setDocument(Document *doc, int pos, int selectionLength)
         int modelIndex = doc->modelItem()->index().row();
         if (mDocComboBox) {
             mDocComboBox->blockSignals(true);
-            QModelIndex mIndex = mProxyModel->index(modelIndex, 0);
+            QModelIndex mIndex = Main::documentManager()->docModel()->index(modelIndex, 0, QModelIndex());
             QModelIndex proxyRow = mProxyModel->mapFromSource(mIndex);
             int proxyIndex = proxyRow.row();
             mDocComboBox->setCurrentIndex(proxyIndex);

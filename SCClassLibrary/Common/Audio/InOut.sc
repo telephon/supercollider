@@ -217,7 +217,7 @@ AbstractOut : UGen {
 				});
 			});
 		}, {
-			if(inputs.size <= 1, {
+			if(inputs.size <= this.class.numFixedArgs, {
 				^"missing input at index 1"
 			})
 		});
@@ -279,16 +279,5 @@ XOut : AbstractOut {
 		^0.0		// Out has no output
 	}
 	*numFixedArgs { ^2 }
-	checkInputs {
-		if (rate == 'audio', {
-			for(2, inputs.size - 1, { arg i;
-				if (inputs.at(i).rate != 'audio', {
-					^(" input at index " + i +
-						"(" + inputs.at(i) + ") is not audio rate");
-				});
-			});
-		});
-		^this.checkValidInputs
-	}
 	writesToBus { ^true }
 }

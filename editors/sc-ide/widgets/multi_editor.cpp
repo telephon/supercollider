@@ -30,8 +30,8 @@
 #include "../core/sc_process.hpp"
 #include "../core/session_manager.hpp"
 
-#include "yaml-cpp/node.h"
-#include "yaml-cpp/parser.h"
+#include <yaml-cpp/node/node.h>
+#include <yaml-cpp/parser.h>
 
 #include <QApplication>
 #include <QDebug>
@@ -254,7 +254,7 @@ void EditorTabBar::showContextMenu(QMouseEvent * event)
         menu->addAction(tr("Close Tabs to the Right"), this, SLOT(onCloseTabsToTheRight()));
     }
 
-    menu->popup(event->pos());
+    menu->popup(event->screenPos().toPoint());
 }
 
 void EditorTabBar::onCloseTab()
@@ -791,8 +791,11 @@ void MultiEditor::applySettings( Settings::Manager * settings )
 
 void MultiEditor::activateComboBoxWhenSplitting() {
     emit splitViewActivated();
-    bool comboBoxWhenSplitting = Main::settings()->value("IDE/editor/useComboBoxWhenSplitting").toBool();
-    showEditorTabs(comboBoxWhenSplitting);
+    bool comboBoxInUse = Main::settings()->value("IDE/editor/useComboBox").toBool();
+    if (!comboBoxInUse) {
+        bool comboBoxWhenSplitting = Main::settings()->value("IDE/editor/useComboBoxWhenSplitting").toBool();
+        showEditorTabs(comboBoxWhenSplitting);
+    }
 }
 
 void MultiEditor::setMainComboBoxOption() {
@@ -995,12 +998,11 @@ void MultiEditor::switchSession( Session *session )
 
     firstBox->setFocus(Qt::OtherFocusReason); // ensure focus
 
+    setMainComboBoxOption();
     if (mSplitter->count()>1)
         activateComboBoxWhenSplitting();
-    else {
+    else
         emit splitViewDeactivated();
-        setMainComboBoxOption();
-    }
 }
 
 int MultiEditor::addTab( Document * doc )
@@ -1018,7 +1020,8 @@ int MultiEditor::addTab( Document * doc )
     if(tdoc->isModified())
         icon = mDocModifiedIcon;
 
-    tabIdx = mTabs->addTab( icon, doc->title() );
+    int currentIndex = mTabs->currentIndex();
+    tabIdx = mTabs->insertTab( currentIndex + 1, icon, doc->title() );
     mTabs->setTabData( tabIdx, QVariant::fromValue<Document*>(doc) );
 
     mDocModifiedSigMap.setMapping(tdoc, doc);

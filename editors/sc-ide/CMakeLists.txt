@@ -100,8 +100,6 @@ set ( ide_moc_hdr
     widgets/util/volume_widget.hpp
 
     ${CMAKE_SOURCE_DIR}/QtCollider/widgets/web_page.hpp
-    ${CMAKE_SOURCE_DIR}/editors/sc-ide/primitives/localsocket_utils.cpp
-    ${CMAKE_SOURCE_DIR}/editors/sc-ide/primitives/localsocket_utils.hpp
 )
 
 file (GLOB_RECURSE all_hdr *hpp)
@@ -156,6 +154,11 @@ set ( ide_src
     ${CMAKE_SOURCE_DIR}/QtCollider/widgets/web_page.cpp
 
     ${CMAKE_SOURCE_DIR}/common/SC_TextUtils.cpp
+    ${CMAKE_SOURCE_DIR}/common/SC_Filesystem_macos.cpp
+    ${CMAKE_SOURCE_DIR}/common/SC_Filesystem_win.cpp
+    ${CMAKE_SOURCE_DIR}/common/SC_Filesystem_unix.cpp
+    ${CMAKE_SOURCE_DIR}/common/SC_Filesystem_iphone.cpp
+
     ${CMAKE_SOURCE_DIR}/editors/sc-ide/primitives/localsocket_utils.cpp
     ${CMAKE_SOURCE_DIR}/editors/sc-ide/primitives/localsocket_utils.hpp
 
@@ -180,14 +183,12 @@ list(APPEND ide_src
     ${CMAKE_SOURCE_DIR}/QtCollider/layouts/stack_layout.cpp
 )
 
-list(APPEND ide_src ${CMAKE_SOURCE_DIR}/common/SC_DirUtils.cpp)
 if(APPLE)
-	set_property(SOURCE ${CMAKE_SOURCE_DIR}/common/SC_DirUtils.cpp PROPERTY COMPILE_FLAGS -xobjective-c++)
+	set_property(SOURCE ${CMAKE_SOURCE_DIR}/common/SC_Filesystem_macos.cpp PROPERTY COMPILE_FLAGS -xobjective-c++)
 endif()
 
 if(APPLE)
 	list(APPEND ide_src
-        ${CMAKE_SOURCE_DIR}/common/SC_StandAloneInfo_Darwin.cpp
         ${CMAKE_SOURCE_DIR}/QtCollider/hacks/hacks_mac.mm
     )
 elseif(WIN32)
@@ -197,7 +198,6 @@ endif()
 include_directories(${CMAKE_SOURCE_DIR}/include/common)
 include_directories(${CMAKE_SOURCE_DIR}/common)
 include_directories(${CMAKE_SOURCE_DIR}/include/plugin_interface)
-include_directories(${YAMLCPP_INCLUDE_DIR})
 include_directories(${CMAKE_SOURCE_DIR}/external_libraries/boost)
 # For QtCollider headers:
 include_directories(${CMAKE_SOURCE_DIR})
@@ -273,15 +273,15 @@ endif()
 
 target_link_libraries( SuperCollider
     ${QT_IDE_LIBRARIES}
-    ${YAMLCPP_LIBRARY}
+    yaml
     oscpack
 )
 
 if(Boost_FOUND)
-    target_link_libraries( SuperCollider ${Boost_SYSTEM_LIBRARY} )
+    target_link_libraries( SuperCollider ${Boost_SYSTEM_LIBRARY} ${Boost_FILESYSTEM_LIBRARY} )
 else()
     # in-house-built boost system
-    target_link_libraries( SuperCollider boost_system )
+    target_link_libraries( SuperCollider boost_system boost_filesystem )
 endif()
 
 if(APPLE)
@@ -362,6 +362,20 @@ elseif(WIN32)
     if(NOT MSVC)
         set_target_properties(SuperCollider PROPERTIES RUNTIME_OUTPUT_DIRECTORY "$<CONFIG>")
     endif(NOT MSVC)
+
+    if(MSYS)
+      add_custom_command(TARGET SuperCollider
+        POST_BUILD
+        COMMAND "${CMAKE_SOURCE_DIR}/platform/windows/junctions.sh" "create" "${CMAKE_SOURCE_DIR}" "$<TARGET_FILE_DIR:SuperCollider>"
+        COMMENT "Creating links to SCClassLibrary, HelpSource, examples and sounds"
+      )
+    else()
+      add_custom_command(TARGET SuperCollider
+        PRE_BUILD
+        COMMAND cmd /C ${CMAKE_SOURCE_DIR}/platform/windows/junctions.bat create \"$<TARGET_FILE_DIR:SuperCollider>\" \"${CMAKE_SOURCE_DIR}\"
+        COMMENT "Creating links to SCClassLibrary, HelpSource, examples and sounds"
+      )
+    endif()
 
     foreach(translation ${translations})
       add_custom_command(TARGET SuperCollider

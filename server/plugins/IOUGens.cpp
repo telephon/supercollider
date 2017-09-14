@@ -65,7 +65,7 @@ struct OffsetOut : public IOUnit
 	bool m_empty;
 };
 
-struct AudioControl : public Unit
+struct AudioControl : public IOUnit
 {
 	float *prevVal; // this will have to be a pointer later!
 };
@@ -186,91 +186,135 @@ void Control_Ctor(Unit* unit)
 
 void AudioControl_next_k(AudioControl *unit, int inNumSamples)
 {
-    uint32 numChannels = unit->mNumOutputs;
-    float *prevVal = unit->prevVal;
-    float **mapin = unit->mParent->mMapControls + unit->mSpecialIndex;
-    for(uint32 i = 0; i < numChannels; ++i, mapin++){
-	float *out = OUT(i);
-	int *mapRatep;
-	int mapRate;
-	float nextVal, curVal, valSlope;
-	mapRatep = unit->mParent->mControlRates + unit->mSpecialIndex;
-	mapRate = mapRatep[i];
-	switch (mapRate) {
-	    case 0 : {
-		for(int j = 0; j < inNumSamples; j++){
-		    out[j] = *mapin[0];
+	uint32 numChannels = unit->mNumOutputs;
+	float *prevVal = unit->prevVal;
+	float **mapin = unit->mParent->mMapControls + unit->mSpecialIndex;
+	World *world = unit->mWorld;
+	int32 bufCounter = world->mBufCounter;
+	
+	int32 *touched = world->mAudioBusTouched;
+	int32 *channelOffsets = unit->mParent->mAudioBusOffsets;
+
+	for(uint32 i = 0; i < numChannels; ++i, mapin++){
+		float *out = OUT(i);
+		int *mapRatep;
+		int mapRate;
+		float nextVal, curVal, valSlope;
+		mapRatep = unit->mParent->mControlRates + unit->mSpecialIndex;
+		mapRate = mapRatep[i];
+		switch (mapRate) {
+			case 0 : {
+				for(int j = 0; j < inNumSamples; j++){
+					out[j] = *mapin[0];
+				}
+			} break;
+			case 1 : {
+				nextVal = *mapin[0];
+				curVal = prevVal[i];
+				valSlope = CALCSLOPE(nextVal, curVal);
+				for(int j = 0; j < inNumSamples; j++){
+					out[j] = curVal; // should be prevVal
+					curVal += valSlope;
+				}
+				unit->prevVal[i] = curVal;
+			} break;
+				// case 2 - AudioControl is in effect
+			case 2 : {
+				/*
+					the graph / unit stores which controls (based on special index) are mapped
+					to which audio buses this is needed to access the touched values for when
+					an audio bus has been written to last. bufCounter is the current value for the
+					control period (basically, the number of control periods that have elapsed
+					since the server started). We check the touched value for the mapped audio
+					bus to see if it has been written to in the current control period or the
+					previous control period (to enable an InFeedback type of mapping)...
+				*/
+				int thisChannelOffset = channelOffsets[unit->mSpecialIndex + i];
+				//  ... are we good to write? Copy! or ...
+				if((thisChannelOffset >= 0) &&
+					((touched[thisChannelOffset] == bufCounter) ||
+					 (touched[thisChannelOffset] == bufCounter - 1)
+					 )){
+						Copy(inNumSamples, out, *mapin);
+					} else {
+						//  ... old data, so zero it out.
+						Fill(inNumSamples, out, 0.f);
+					}
+				}
+			break;
 		}
-	    } break;
-	    case 1 : {
-		nextVal = *mapin[0];
-		curVal = prevVal[i];
-		valSlope = CALCSLOPE(nextVal, curVal);
-		for(int j = 0; j < inNumSamples; j++){
-		    out[j] = curVal; // should be prevVal
-		    curVal += valSlope;
-		}
-		unit->prevVal[i] = curVal;
-	    } break;
-	    case 2 : Copy(inNumSamples, out, *mapin);
-	    break;
 	}
-    }
 }
 
 void AudioControl_next_1(AudioControl *unit, int inNumSamples)
 {
-    float **mapin = unit->mParent->mMapControls + unit->mSpecialIndex;
-    float *out = OUT(0);
-    int *mapRatep;
-    int mapRate;
-    float nextVal, curVal, valSlope;
-    float* prevVal;
-    prevVal = unit->prevVal;
-    curVal = prevVal[0];
-    mapRatep = unit->mParent->mControlRates + unit->mSpecialIndex;
-    mapRate = mapRatep[0];
+	float **mapin = unit->mParent->mMapControls + unit->mSpecialIndex;
+	float *out = OUT(0);
+	int *mapRatep;
+	int mapRate;
+	float nextVal, curVal, valSlope;
+	float* prevVal;
+	prevVal = unit->prevVal;
+	curVal = prevVal[0];
+	mapRatep = unit->mParent->mControlRates + unit->mSpecialIndex;
+	mapRate = mapRatep[0];
+	World *world = unit->mWorld;
+	int32 *touched = world->mAudioBusTouched;
+	int32 bufCounter = world->mBufCounter;
+	int32 *channelOffsets = unit->mParent->mAudioBusOffsets;
 
-    switch (mapRate) {
-	case 0 : {
-	    for(int i = 0; i < inNumSamples; i++){
-		out[i] = *mapin[0];
+	switch (mapRate) {
+		case 0 : {
+			for(int i = 0; i < inNumSamples; i++){
+				out[i] = *mapin[0];
+			}
+		} break;
+		case 1 : {
+			nextVal = *mapin[0];
+			valSlope = CALCSLOPE(nextVal, curVal);
+			for(int i = 0; i < inNumSamples; i++){
+				out[i] = curVal;
+				curVal += valSlope;
+			}
+			unit->prevVal[0] = curVal;
+		} break;
+			/*
+			 see case 2 comments above in definition for AudioControl_next_k
+			 */
+		case 2 : {
+			int thisChannelOffset = channelOffsets[unit->mSpecialIndex];
+			if((thisChannelOffset >= 0) &&
+				((touched[thisChannelOffset] == bufCounter) ||
+				(touched[thisChannelOffset] == bufCounter - 1)
+				)){
+					Copy(inNumSamples, out, *mapin);
+				} else {
+					Fill(inNumSamples, out, 0.f);
+				}
 		}
-	} break;
-	case 1 : {
-	    nextVal = *mapin[0];
-	    valSlope = CALCSLOPE(nextVal, curVal);
-	    for(int i = 0; i < inNumSamples; i++){
-		out[i] = curVal;
-		curVal += valSlope;
-		}
-	    unit->prevVal[0] = curVal;
-	} break;
-	case 2 :
-	    Copy(inNumSamples, out, *mapin);
-	break;
-    }
+		break;
+	}
 
 }
 
 void AudioControl_Ctor(AudioControl* unit)
 {
-    unit->prevVal = (float*)RTAlloc(unit->mWorld, unit->mNumOutputs * sizeof(float));
-    for(int i = 0; i < unit->mNumOutputs; i++){
-	unit->prevVal[i] = 0.0;
-    }
-    if (unit->mNumOutputs == 1) {
-	SETCALC(AudioControl_next_1);
-	AudioControl_next_1(unit, 1);
-    } else {
-	SETCALC(AudioControl_next_k);
-	AudioControl_next_k(unit, 1);
-    }
+	unit->prevVal = (float*)RTAlloc(unit->mWorld, unit->mNumOutputs * sizeof(float));
+	for(int i = 0; i < unit->mNumOutputs; i++){
+		unit->prevVal[i] = 0.0;
+	}
+	if (unit->mNumOutputs == 1) {
+		SETCALC(AudioControl_next_1);
+		AudioControl_next_1(unit, 1);
+	} else {
+		SETCALC(AudioControl_next_k);
+		AudioControl_next_k(unit, 1);
+	}
 }
 
 void AudioControl_Dtor(AudioControl* unit)
 {
-    RTFree(unit->mWorld, unit->prevVal);
+	RTFree(unit->mWorld, unit->prevVal);
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
