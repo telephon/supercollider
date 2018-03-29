@@ -250,12 +250,14 @@ method::block
 Break from a loop. Calls the receiver with an argument which is a function that returns from the method block. To exit the loop, call .value on the function passed in. You can pass a value to this function and that value will be returned from the block method.
 
 code::
+(
 block {|break|
 	100.do {|i|
 		i.postln;
 		if (i == 7) { break.value(999) }
 	};
 }
+)
 ::
 
 method::thunk
