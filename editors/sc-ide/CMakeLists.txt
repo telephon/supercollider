@@ -7,18 +7,17 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 find_package(Qt5Core)
 find_package(Qt5Concurrent)
 find_package(Qt5LinguistTools)
-find_package(Qt5OpenGL)
-find_package(Qt5Positioning)
+# find_package(Qt5OpenGL)
 find_package(Qt5PrintSupport)
 find_package(Qt5Qml)
 find_package(Qt5Quick)
-find_package(Qt5Sensors)
 find_package(Qt5Sql)
 find_package(Qt5WebKitWidgets)
 find_package(Qt5Widgets)
 
 set(QT_IDE_LIBRARIES
-    Qt5::Core Qt5::Concurrent Qt5::WebKitWidgets Qt5::OpenGL Qt5::PrintSupport Qt5::Sensors Qt5::Quick Qt5::Qml Qt5::Sql Qt5::Positioning)
+    # Qt5::OpenGL
+    Qt5::Core Qt5::Concurrent Qt5::WebKitWidgets Qt5::PrintSupport Qt5::Quick Qt5::Qml Qt5::Sql)
 
 if(${CMAKE_COMPILER_IS_GNUCXX})
     add_definitions(-Wreorder)
@@ -199,6 +198,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include/common)
 include_directories(${CMAKE_SOURCE_DIR}/common)
 include_directories(${CMAKE_SOURCE_DIR}/include/plugin_interface)
 include_directories(${CMAKE_SOURCE_DIR}/external_libraries/boost)
+include_directories(${YAMLCPP_INCLUDE_DIR})
 # For QtCollider headers:
 include_directories(${CMAKE_SOURCE_DIR})
 # Needed for auto-generated forms headers:
@@ -273,7 +273,7 @@ endif()
 
 target_link_libraries( SuperCollider
     ${QT_IDE_LIBRARIES}
-    yaml
+    ${YAMLCPP_LIBRARY}
     oscpack
 )
 
@@ -372,7 +372,7 @@ elseif(WIN32)
     else()
       add_custom_command(TARGET SuperCollider
         PRE_BUILD
-        COMMAND cmd /C ${CMAKE_SOURCE_DIR}/platform/windows/junctions.bat create \"$<TARGET_FILE_DIR:SuperCollider>\" \"${CMAKE_SOURCE_DIR}\"
+        COMMAND cmd /C "\"\"${CMAKE_SOURCE_DIR}/platform/windows/junctions.bat\" create \"$<TARGET_FILE_DIR:SuperCollider>\" \"${CMAKE_SOURCE_DIR}\"\""
         COMMENT "Creating links to SCClassLibrary, HelpSource, examples and sounds"
       )
     endif()

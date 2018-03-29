@@ -1,5 +1,5 @@
-Supercollider 3 for linux
-=========================
+Welcome to SuperCollider for Linux!
+===================================
 
 Intro
 -----
@@ -99,14 +99,14 @@ for building supercollider:
  - pkg-config
  - git (used by the Quarks package management system)
  - cmake (on some platforms, cmake >= 2.9 may require manual build)
- - qt5-default qt5-qmake qttools5-dev qttools5-dev-tools qtdeclarative5-dev libqt5webkit5-dev qtpositioning5-dev libqt5sensors5-dev libqt5opengl5-dev
+ - qt5-default qt5-qmake qttools5-dev qttools5-dev-tools qtdeclarative5-dev libqt5webkit5-dev
 
 More details for building on embedded linux platforms (Raspberry Pi, 
 Beaglebone Black) can be found here:
 
     http://supercollider.github.io/development/building
 
-The recommended version of gcc is 4.8
+The minimum required version of gcc is 4.8.
 
 
 Building

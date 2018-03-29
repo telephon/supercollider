@@ -10,8 +10,6 @@ include_directories(${CMAKE_SOURCE_DIR}/include/common
                     ${CMAKE_SOURCE_DIR}/include/server
                     ${CMAKE_SOURCE_DIR}/common
 
-                    ${YAMLCPP_INCLUDE_DIR}
-
                     ${CMAKE_SOURCE_DIR}/external_libraries/boost_sync/include
 
                     LangSource
@@ -19,6 +17,8 @@ include_directories(${CMAKE_SOURCE_DIR}/include/common
 
                     ${CMAKE_SOURCE_DIR}/external_libraries/nova-tt
                     LangSource/Bison
+
+                    ${YAMLCPP_INCLUDE_DIR}
 )
 
 
@@ -97,13 +97,6 @@ if(APPLE)
 
 	list(APPEND sclang_sources ${CMAKE_SOURCE_DIR}/common/SC_Apple.mm)
 	set_source_files_properties(${CMAKE_SOURCE_DIR}/common/SC_Apple.mm PROPERTIES COMPILE_FLAGS "-x objective-c++ -fobjc-exceptions")
-endif()
-
-if (NOT Boost_FOUND)
-	file(GLOB boost_system_sources ../external_libraries/boost/libs/system/src/*cpp)
-	file(GLOB boost_fs_sources ../external_libraries/boost/libs/filesystem/src/*cpp)
-	file(GLOB boost_regex_sources ../external_libraries/boost/libs/regex/src/*cpp)
-	list(APPEND sclang_sources ${boost_fs_sources} ${boost_system_sources} ${boost_regex_sources})
 endif()
 
 file(GLOB_RECURSE headers ../include/*.h* )
@@ -253,7 +246,7 @@ if (Boost_FOUND)
 	target_link_libraries(libsclang ${Boost_THREAD_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_REGEX_LIBRARY} ${Boost_FILESYSTEM_LIBRARY})
 else()
 	target_include_directories(libsclang PUBLIC ${CMAKE_SOURCE_DIR}/external_libraries/boost)
-	target_link_libraries(libsclang boost_thread)
+	target_link_libraries(libsclang boost_regex boost_thread boost_system boost_filesystem)
 endif()
 
 
@@ -373,9 +366,9 @@ elseif(WIN32)
       else()
         add_custom_command(TARGET sclang
           POST_BUILD
-          COMMAND cmd /C ${CMAKE_SOURCE_DIR}/platform/windows/junctions.bat remove \"$<TARGET_FILE_DIR:sclang>\"
+          COMMAND cmd /C "\"\"${CMAKE_SOURCE_DIR}/platform/windows/junctions.bat\" remove \"$<TARGET_FILE_DIR:sclang>\"\""
           COMMAND ${CMAKE_COMMAND} -E copy_directory $<TARGET_FILE_DIR:sclang> $<TARGET_FILE_DIR:SuperCollider>
-          COMMAND cmd /C ${CMAKE_SOURCE_DIR}/platform/windows/junctions.bat create \"$<TARGET_FILE_DIR:sclang>\" \"${CMAKE_SOURCE_DIR}\"
+          COMMAND cmd /C "\"\"${CMAKE_SOURCE_DIR}/platform/windows/junctions.bat\" create \"$<TARGET_FILE_DIR:sclang>\" \"${CMAKE_SOURCE_DIR}\"\""
           COMMENT "Copying files in target sclang to target SuperCollider (scide) and creating links to SCClassLibrary e.a."
         )
       endif()
@@ -395,7 +388,7 @@ elseif(WIN32)
             SET(QT_PLUGINS_DIR "${QT_BIN_PATH}/../plugins" CACHE PATH "Location of qt plugins for windows")
         endif()
 
-        foreach(plugin ${Qt5Network_PLUGINS} ${Qt5Gui_PLUGINS} ${Qt5Sensors_PLUGINS} ${Qt5Sql_PLUGINS} ${Qt5PrintSupport_PLUGINS})
+        foreach(plugin ${Qt5Network_PLUGINS} ${Qt5Gui_PLUGINS} ${Qt5Sql_PLUGINS} ${Qt5PrintSupport_PLUGINS})
             get_target_property(_loc ${plugin} LOCATION)
             get_filename_component(_parent_dir ${_loc} DIRECTORY)
             get_filename_component(_name_we ${_loc} NAME_WE)
