@@ -1795,16 +1795,37 @@ void Dxrand_Ctor(Dxrand *unit)
 	OUT0(0) = 0.f;
 }
 
-#define WINDEX \
+/*
+ 
+ This is not yet correct because we need to call DEMANDINPUT_A on each value and then decide which to take.
+ This is less efficient, so better to make an extra method
+ 
+ */
+
+
+#define WINDEX_A \
 float w, sum = 0.0; \
 float r = unit->mParent->mRGen->frand(); \
 for (int i=0; i<weights_size; ++i) { \
-	w = IN0(2 + i); \
-	sum += w; \
-	if (sum >= r) { \
-		unit->m_index = i + offset; \
-		break; \
-	} \
+w = DEMANDINPUT_A(2 + i, inNumSamples); \
+sum += w; \
+if (sum >= r) { \
+unit->m_index = i + offset; \
+break; \
+} \
+} \
+
+#define WINDEX_RESET \
+float w, sum = 0.0; \
+float r = unit->mParent->mRGen->frand(); \
+for (int i=0; i<weights_size; ++i) { \
+RESETINPUT(2 + i); \
+w = DEMANDINPUT_A(2 + i, 1); \
+sum += w; \
+if (sum >= r) { \
+unit->m_index = i + offset; \
+break; \
+} \
 } \
 
 
@@ -1833,7 +1854,7 @@ void Dwrand_next(Dwrand *unit, int inNumSamples)
 				float x = DEMANDINPUT_A(unit->m_index, inNumSamples);
 				if (sc_isnan(x)) {
 
-					WINDEX;
+					WINDEX_A;
 					unit->m_repeatCount++;
 					unit->m_needToResetChild = true;
 				} else {
@@ -1842,7 +1863,7 @@ void Dwrand_next(Dwrand *unit, int inNumSamples)
 				}
 			} else {
 				OUT0(0) = DEMANDINPUT_A(unit->m_index, inNumSamples);
-				WINDEX;
+				WINDEX_A;
 				unit->m_repeatCount++;
 				unit->m_needToResetChild = true;
 				return;
@@ -1852,7 +1873,8 @@ void Dwrand_next(Dwrand *unit, int inNumSamples)
 		unit->m_repeats = -1.f;
 		unit->m_repeatCount = 0;
 		unit->m_needToResetChild = true;
-		WINDEX;
+		
+		WINDEX_RESET;
 	}
 }
 
