@@ -1026,7 +1026,7 @@ Server {
 		// over from crashes, unexpected quits etc.
 		// you can't cause them to quit via OSC (the boot button)
 
-		// this brutally kills them all off
+		// this terminates all of them
 		thisProcess.platform.killAll("scsynth");
 		thisProcess.platform.killAll("supernova");
 		this.quitAll(watchShutDown: false);
