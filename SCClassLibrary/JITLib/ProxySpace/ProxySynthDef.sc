@@ -91,7 +91,7 @@ ProxySynthDef : SynthDef {
 				EnvGate(1, nil, nil, 2, if(rate === 'audio') { 'sin' } { 'lin' })
 			} { 1.0 };
 
-			if(proxy.reshaping == \fill) {
+			if(proxy.reshaping == \wrapExpand) {
 				if(chanConstraint.isNil) {
 					chanConstraint = if(rate === 'audio') { NodeProxy.defaultNumAudio } { NodeProxy.defaultNumControl  }
 				};
