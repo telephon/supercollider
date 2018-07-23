@@ -11,7 +11,10 @@ ProxySynthDef : SynthDef {
 		var hasGateArg=false, hasOutArg=false;
 		var outerBuildSynthDef = UGen.buildSynthDef;
 		def = super.new(name, {
-			var  out, outCtl;
+			var out, outCtl, proxy;
+
+			// the current proxy
+			proxy = NodeProxy.buildProxy;
 
 			// build the controls from args
 			output = SynthDef.wrap(func, rates, prependArgs);
@@ -88,7 +91,7 @@ ProxySynthDef : SynthDef {
 				EnvGate(1, nil, nil, 2, if(rate === 'audio') { 'sin' } { 'lin' })
 			} { 1.0 };
 
-			if(NodeProxy.buildProxy.reshaping == \fill) {
+			if(proxy.reshaping == \fill) {
 				if(chanConstraint.isNil) {
 					chanConstraint = if(rate === 'audio') { NodeProxy.defaultNumAudio } { NodeProxy.defaultNumControl  }
 				};
@@ -101,11 +104,11 @@ ProxySynthDef : SynthDef {
 					and: { isScalar.not },
 					{
 						if(rate === 'audio') {
-							postf("%: wrapped channels from % to % channels\n", NodeProxy.buildProxy, numChannels, chanConstraint);
+							postf("%: wrapped channels from % to % channels\n", proxy, numChannels, chanConstraint);
 							output = NumChannels.ar(output, chanConstraint, true);
 							numChannels = chanConstraint;
 						} {
-							postf("%: kept first % channels from % channel input\n", NodeProxy.buildProxy, chanConstraint, numChannels);
+							postf("%: kept first % channels from % channel input\n", proxy, chanConstraint, numChannels);
 							output = output.keep(chanConstraint);
 							numChannels = chanConstraint;
 						}
@@ -124,12 +127,12 @@ ProxySynthDef : SynthDef {
 					if(rate === 'audio') {
 						output = A2K.kr(output);
 						rate = 'control';
-						postf("%: adopted proxy input to control rate\n", NodeProxy.buildProxy);
+						postf("%: adopted proxy input to control rate\n", proxy);
 					} {
 						if(rateConstraint === 'audio') {
 							output = K2A.ar(output);
 							rate = 'audio';
-							postf("%: adopted proxy input to audio rate\n", NodeProxy.buildProxy);
+							postf("%: adopted proxy input to audio rate\n", proxy);
 						}
 					}
 				};
