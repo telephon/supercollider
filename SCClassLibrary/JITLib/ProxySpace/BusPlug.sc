@@ -6,7 +6,8 @@ BusPlug : AbstractFunction {
 	var busLoaded = false;
 	var <>reshaping; // \elastic, \expanding
 
-	classvar <>defaultNumAudio=2, <>defaultNumControl=1, <>defaultReshaping;
+	classvar <>defaultNumAudio=2, <>defaultNumControl=1;
+	classvar <>defaultReshapingAudio, <>defaultReshapingControl, >defaultReshaping;
 
 	*new { | server |
 		^super.newCopyArgs(server ? Server.default);
@@ -25,6 +26,10 @@ BusPlug : AbstractFunction {
 		^this.new(server).defineBus(\control, numChannels)
 	}
 
+	*defaultReshaping {
+		^defaultReshaping ?? { defaultReshapingControl }
+	}
+
 	clear {
 		this.free;
 		this.stop;
@@ -32,7 +37,6 @@ BusPlug : AbstractFunction {
 		monitor = nil;
 		this.changed(\clear);
 	}
-
 
 	//  playing and access
 

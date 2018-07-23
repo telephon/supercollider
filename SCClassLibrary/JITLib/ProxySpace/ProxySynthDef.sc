@@ -11,7 +11,7 @@ ProxySynthDef : SynthDef {
 		var hasGateArg=false, hasOutArg=false;
 		var outerBuildSynthDef = UGen.buildSynthDef;
 		def = super.new(name, {
-			var out, outCtl, proxy;
+			var out, outCtl, proxy, reshaping;
 
 			// the current proxy
 			proxy = NodeProxy.buildProxy;
@@ -91,7 +91,9 @@ ProxySynthDef : SynthDef {
 				EnvGate(1, nil, nil, 2, if(rate === 'audio') { 'sin' } { 'lin' })
 			} { 1.0 };
 
-			if(proxy.reshaping == \wrapExpand) {
+			reshaping = if(rate == \audio) { NodeProxy.defaultReshapingAudio } { NodeProxy.defaultReshaping };
+
+			if(reshaping == \wrapExpand) {
 				if(chanConstraint.isNil) {
 					chanConstraint = if(rate === 'audio') { NodeProxy.defaultNumAudio } { NodeProxy.defaultNumControl  }
 				};
