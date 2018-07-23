@@ -88,21 +88,30 @@ ProxySynthDef : SynthDef {
 				EnvGate(1, nil, nil, 2, if(rate === 'audio') { 'sin' } { 'lin' })
 			} { 1.0 };
 
-			if(chanConstraint.notNil
-				and: { chanConstraint < numChannels }
-				and: { isScalar.not },
-				{
-					if(rate === 'audio') {
-						postf("%: wrapped channels from % to % channels\n", NodeProxy.buildProxy, numChannels, chanConstraint);
-						output = NumChannels.ar(output, chanConstraint, true);
-						numChannels = chanConstraint;
-					} {
-						postf("%: kept first % channels from % channel input\n", NodeProxy.buildProxy, chanConstraint, numChannels);
-						output = output.keep(chanConstraint);
-						numChannels = chanConstraint;
-					}
+			if(NodeProxy.buildProxy.reshaping == \fill) {
+				if(chanConstraint.isNil) {
+					chanConstraint = if(rate === 'audio') { NodeProxy.defaultNumAudio } { NodeProxy.defaultNumControl  }
+				};
+				output = NumChannels.ar(output, chanConstraint, true);
+				numChannels = chanConstraint;
+			} {
 
-			});
+				if(chanConstraint.notNil
+					and: { chanConstraint < numChannels }
+					and: { isScalar.not },
+					{
+						if(rate === 'audio') {
+							postf("%: wrapped channels from % to % channels\n", NodeProxy.buildProxy, numChannels, chanConstraint);
+							output = NumChannels.ar(output, chanConstraint, true);
+							numChannels = chanConstraint;
+						} {
+							postf("%: kept first % channels from % channel input\n", NodeProxy.buildProxy, chanConstraint, numChannels);
+							output = output.keep(chanConstraint);
+							numChannels = chanConstraint;
+						}
+
+				})
+			};
 			output = output * envgen;
 
 			//"passed in rate: % output rate: %\n".postf(rateConstraint, rate);
