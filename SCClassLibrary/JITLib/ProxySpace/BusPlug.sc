@@ -27,6 +27,14 @@ BusPlug : AbstractFunction {
 		^this.new(server).defineBus(\control, numChannels)
 	}
 
+	*signalShapeForRate { |rate|
+		^if(rate == \audio) {
+			defaultSignalShapeControl
+		} {
+			defaultSignalShapeAudio
+		}
+	}
+
 	clear {
 		this.free;
 		this.stop;
@@ -83,15 +91,10 @@ BusPlug : AbstractFunction {
 		^if(numChannels.isNil) { output.asArray } { output }
 	}
 
+
 	structure {
 		var output = this.value;
-		signalShape = signalShape ?? {
-			if(this.rate == \audio) {
-				defaultSignalShapeControl
-			} {
-				defaultSignalShapeAudio
-			}
-		};
+		signalShape = signalShape ?? { this.class.signalShapeForRate(this.rate) };
 		if(signalShape.notNil) {
 			output = output.asArray.reshapeLike(signalShape);
 		};
