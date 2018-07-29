@@ -83,6 +83,21 @@ BusPlug : AbstractFunction {
 		^if(numChannels.isNil) { output.asArray } { output }
 	}
 
+	structure {
+		var output = this.value;
+		signalShape = signalShape ?? {
+			if(this.rate == \audio) {
+				defaultSignalShapeControl
+			} {
+				defaultSignalShapeAudio
+			}
+		};
+		if(signalShape.notNil) {
+			output = output.asArray.reshapeLike(signalShape);
+		};
+		^output
+	}
+
 	asStream {
 		^Routine { loop { this.asControlInput.yield } }
 	}
