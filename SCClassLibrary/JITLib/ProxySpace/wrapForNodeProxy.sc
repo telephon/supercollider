@@ -39,7 +39,8 @@
 			true,
 			channelOffset,
 			channelConstraint,
-			rateConstraint
+			rateConstraint,
+			proxy.signalShape
 		);
 	}
 	prepareForProxySynthDef { ^this.subclassResponsibility(thisMethod) }

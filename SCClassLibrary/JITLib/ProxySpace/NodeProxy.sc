@@ -246,6 +246,11 @@ NodeProxy : BusPlug {
 		if(server.serverRunning) { bundle.schedSend(server, clock ? TempoClock.default, quant) };
 	}
 
+	signalShape_ { |shape|
+		signalShape = shape;
+		this.rebuild;
+	}
+
 	lag { | ... args |
 		nodeMap.setRates(args);
 		this.rebuild;

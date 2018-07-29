@@ -6,7 +6,7 @@ ProxySynthDef : SynthDef {
 
 
 	*new { | name, func, rates, prependArgs, makeFadeEnv = true, channelOffset = 0,
-		chanConstraint, rateConstraint |
+		chanConstraint, rateConstraint, signalShape |
 		var def, rate, numChannels, output, isScalar, envgen, canFree, hasOwnGate;
 		var hasGateArg=false, hasOutArg=false;
 		var outerBuildSynthDef = UGen.buildSynthDef;
@@ -88,6 +88,19 @@ ProxySynthDef : SynthDef {
 				EnvGate(1, nil, nil, 2, if(rate === 'audio') { 'sin' } { 'lin' })
 			} { 1.0 };
 
+			signalShape = signalShape ?? {
+				if(rate == \audio) {
+					NodeProxy.defaultSignalShapeAudio
+				} {
+					NodeProxy.defaultSignalShapeControl
+				}
+			};
+
+			if(signalShape.notNil) {
+				output = output.asArray.reshapeLike(signalShape).asArray.flat.unbubble;
+				numChannels = output.numChannels;
+			};
+
 			if(chanConstraint.notNil
 				and: { chanConstraint < numChannels }
 				and: { isScalar.not },
@@ -128,6 +141,7 @@ ProxySynthDef : SynthDef {
 				(if(rate === \audio and: { sampleAccurate }) { OffsetOut } { Out }).multiNewList([rate, outCtl] ++ output)
 			})
 		});
+
 
 		UGen.buildSynthDef = outerBuildSynthDef;
 

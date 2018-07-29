@@ -5,8 +5,10 @@ BusPlug : AbstractFunction {
 	var busArg; // cache for "/s_new" bus arg
 	var busLoaded = false;
 	var <>reshaping; // \elastic, \expanding
+	var <>signalShape;
 
 	classvar <>defaultNumAudio=2, <>defaultNumControl=1, <>defaultReshaping;
+	classvar <>defaultSignalShapeControl, <>defaultSignalShapeAudio;
 
 	*new { | server |
 		^super.newCopyArgs(server ? Server.default);
