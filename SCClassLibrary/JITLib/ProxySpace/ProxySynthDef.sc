@@ -22,19 +22,8 @@ ProxySynthDef : SynthDef {
 				Error("Cannot share UGens between NodeProxies:" + output).throw
 			};
 
-			// protect from accidentally returning wrong array shapes
-			if(output.containsSeqColl) {
-				// try first unbubble singletons, these are ok
-				output = output.collect { |each| each.unbubble };
-				// otherwise flatten, but warn
-				if(output.containsSeqColl) {
-					"Synth output should be a flat array.\n%\nFlattened to: %\n"
-					"See NodeProxy helpfile:routing\n\n".format(output, output.flat).warn;
-					output = output.flat;
-				};
-			};
-
 			output = output ? 0.0;
+			output = output.asArray.flat.unbubble;
 
 			// determine rate and numChannels of ugen func
 			numChannels = output.numChannels;
