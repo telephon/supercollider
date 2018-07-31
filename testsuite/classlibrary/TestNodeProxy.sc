@@ -136,6 +136,31 @@ TestNodeProxy : UnitTest {
 
 	}
 
+	test_signalShape {
+		var server = Server(this.class.name);
+		var shape = [1, [1, 1, [1, 1]]];
+		this.bootServer(server);
+		server.notify;
+		server.sync;
+		Ndef.clear;
+		Ndef(\x).reshaping = nil;
+		Ndef(\x).signalShape = shape;
+		Ndef(\x, { DC.ar });
+		this.assertEquals(
+			Ndef(\x).numChannels,
+			shape.flatSize,
+			"when a signalShape is provided, node proxy should initialize to the number of channels needed"
+		);
+		Ndef(\x).signalShape = [1, 1];
+		Ndef(\x).reshaping = nil;
+		this.assertEquals(
+			Ndef(\x).numChannels,
+			shape.flatSize,
+			"when a signalShape is changed, node proxy should not change the number of channels, unless reshaping is elastic"
+		);
+
+	}
+
 
 }
 
