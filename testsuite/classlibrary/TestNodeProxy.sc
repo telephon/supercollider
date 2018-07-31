@@ -198,6 +198,20 @@ TestNodeProxy : UnitTest {
 		);
 	}
 
+	test_signalShape_structure {
+		var server = Server(this.class.name);
+		var shape = (a: 1, b: [1, 1]);
+		var returnStructure;
+		this.bootServer(server);
+		server.notify;
+		server.sync;
+		Ndef.clear;
+		Ndef(\x).signalShape = shape;
+		Ndef(\x, { DC.ar([1, 1, 1]) });
+		returnStructure = Ndef(\x).structure;
+		this.assertEquals(returnStructure.deepCollect(inf, 1), shape, "nodeproxy structure should return same shape");
+	}
+
 
 }
 
