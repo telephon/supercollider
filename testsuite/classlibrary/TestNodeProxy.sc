@@ -166,6 +166,38 @@ TestNodeProxy : UnitTest {
 		);
 	}
 
+	test_signalShape_default_audio {
+		var server = Server(this.class.name);
+		this.bootServer(server);
+		server.notify;
+		server.sync;
+		Ndef.clear;
+		Ndef.defaultSignalShapeAudio = [1, 1];
+		Ndef.defaultReshaping = nil;
+		Ndef(\x, { DC.ar(1) });
+		this.assertEquals(
+			Ndef(\x).numChannels,
+			2,
+			"defaultSignalShapeAudio should be cosen if proxy is initialized with audio signal"
+		);
+	}
+
+	test_signalShape_default_control {
+		var server = Server(this.class.name);
+		this.bootServer(server);
+		server.notify;
+		server.sync;
+		Ndef.clear;
+		Ndef.defaultSignalShapeControl = 1;
+		Ndef.defaultReshaping = nil;
+		Ndef(\x, { [1, 1] });
+		this.assertEquals(
+			Ndef(\x).numChannels,
+			1,
+			"defaultSignalShapeControl should be cosen if proxy is initialized with control signal"
+		);
+	}
+
 
 }
 
