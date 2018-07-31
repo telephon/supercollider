@@ -152,13 +152,18 @@ TestNodeProxy : UnitTest {
 			"when a signalShape is provided, node proxy should initialize to the number of channels needed"
 		);
 		Ndef(\x).signalShape = [1, 1];
-		Ndef(\x).reshaping = nil;
 		this.assertEquals(
 			Ndef(\x).numChannels,
 			shape.flatSize,
 			"when a signalShape is changed, node proxy should not change the number of channels, unless reshaping is elastic"
 		);
-
+		Ndef(\x).reshaping = \elastic;
+		Ndef(\x).signalShape = [1, 1];
+		this.assertEquals(
+			Ndef(\x).numChannels,
+			2,
+			"when a signalShape is changed, node proxy should change the number of channels if reshaping is elastic"
+		);
 	}
 
 
