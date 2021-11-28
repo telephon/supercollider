@@ -349,9 +349,7 @@ TaskProxy : PatternProxy {
 	////////// playing interface //////////
 
 	playOnce { arg argClock, doReset = (false), quant;
-		var pauseStream = PauseStream(
-			Pprotect(this, { pauseStream.streamError }).asStream
-		);
+		var pauseStream = PauseStream(this.asStream);
 		^pauseStream.play(argClock ? this.clock, doReset, quant ? this.quant)
 	}
 
@@ -377,7 +375,7 @@ TaskProxy : PatternProxy {
 	}
 
 	asProtected {
-		// let's deprecate this method in 3.12
+		this.deprecated(thisMethod);
 		^Pprotect(this, { if(this.player.notNil) { this.player.streamError } })
 	}
 
@@ -578,7 +576,7 @@ EventPatternProxy : TaskProxy {
 		argClock = argClock ? this.clock;
 		playQuant = quant ? this.quant;
 		if(player.isNil) {
-			player = EventStreamPlayer(this.asProtected.asStream, protoEvent);
+			player = EventStreamPlayer(this.asStream, protoEvent);
 			player.play(argClock, doReset, playQuant);
 		} {
 			// resets  when stream has ended or after pause/cmd-period:
@@ -685,8 +683,6 @@ Pdef : EventPatternProxy {
 					outerEvent.put(\embeddingLevel, embeddingLevel + 1);
 					outerEvent.parent_(Event.parentEvents.default);
 				};
-				// maybe add a Pprotect here.
-				// pat.asProtected
 				pat = Pfindur(~sustain.value, pat);
 				outerEvent.put(\delta, nil); // block delta modification by Ppar
 				outerEvent.put(\instrument, ~synthDef ? \default);
