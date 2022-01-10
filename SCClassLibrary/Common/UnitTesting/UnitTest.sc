@@ -54,6 +54,11 @@ UnitTest {
 	// called after each test
 	tearDown {}
 
+	// used in subclass
+	setUpServer {}
+	tearDownServer {}
+
+
 	// run all tests of this UnitTest
 	*run { | reset = true, report = true |
 		if(reset) { this.reset };
@@ -82,10 +87,12 @@ UnitTest {
 	// and that tearDownClass is called afterwards
 	runTestMethod { | method, report = true |
 		this.class.forkIfNeeded {
+			this.setUpServer;
 			this.setUp;
 			currentMethod = method;
 			this.perform(method.name);
 			this.tearDown;
+			this.tearDownServer;
 			if(report) { this.class.report };
 		}
 	}
@@ -418,6 +425,23 @@ UnitTest {
 
 	s {
 		^Server.default; // for convenient translation to/from example code
+	}
+
+}
+
+
+ServerUnitTest : UnitTest {
+	var server;
+
+
+	setUpServer {
+		server = Server(this.class.name, NetAddr("127.0.0.1", 57180));
+		server.bootSync;
+	}
+
+	tearDownServer {
+		if(server.serverRunning) { server.quit };
+		server.remove;
 	}
 
 }
