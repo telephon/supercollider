@@ -24,8 +24,10 @@ TestProxyNodeMap : UnitTest {
 		var proxy = NodeProxy.new;
 		var map = proxy.nodeMap;
 		var buffer = Buffer.alloc(numFrames:1);
+		var controlName;
 		map.set(\x, buffer);
-		this.assert(map.controlNames.first.defaultValue == buffer.bufnum);
+		controlName = map.controlNames.first;
+		this.assertEquals(controlName.defaultValue, buffer.bufnum, "NodeMap's ControlName should become a control input");
 		buffer.free;
 		proxy.clear;
 	}
